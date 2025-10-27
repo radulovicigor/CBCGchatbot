@@ -1,0 +1,12 @@
+question,expected,page
+"Šta je SEPA?","jedinstvena",1
+"Koja je razlika između SCT i SDD?","Instant",5
+"Kako se koristi IBAN?","formata",10
+"Koliko traje SEPA transfer?","dana",2
+"Šta je SCT?","Instant",1
+"Šta je SDD?","Direct",1
+"Koje su prednosti SEPA?","jedinstven",1
+"Šta je BIC kod?","bankarski",3
+"Šta je IBAN?","identifikacioni",3
+"Kako provjeriti validnost IBAN?","checksum",3
+

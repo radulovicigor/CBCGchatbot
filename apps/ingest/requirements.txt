@@ -1,0 +1,6 @@
+PyMuPDF==1.23.21
+azure-search-documents==11.4.0
+openai>=1.40.0
+python-dotenv==1.0.0
+azure-core==1.29.5
+

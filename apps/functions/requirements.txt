@@ -1,0 +1,9 @@
+azure-functions==1.18.0
+httpx==0.26.0
+selectolax==0.3.17
+azure-search-documents==11.4.0
+azure-storage-blob==12.19.0
+python-dateutil==2.8.2
+azure-core==1.29.5
+python-dotenv==1.0.0
+
