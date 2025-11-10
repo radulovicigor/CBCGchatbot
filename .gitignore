@@ -21,11 +21,17 @@ env/
 .env.local
 *.log
 
-# Data files (baza podataka - ne commit-ujemo)
-data/parsed_data.json
-data/*.faiss
-data/*.pkl
-data/*.pdf
+# Data files - commit-ujemo multilingual bazu za saradnike
+# Ignoriši samo stare verzije i cache
+data/vector_index.faiss
+data/docs_metadata.pkl
+data/embedding_cache.pkl
+
+# Keep:
+# - parsed_data.json (scraped articles)
+# - vector_index_multilingual.faiss (multilingual vector DB)
+# - docs_metadata_multilingual.pkl (metadata)
+# - SEPA_QnA.pdf (original PDF)
 
 # IDE
 .vscode/
