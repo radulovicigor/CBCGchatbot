@@ -1,225 +1,235 @@
-# CBCG Chatbot - SEPA RAG Assistant
+# 🏦 CBCG Chatbot - Službeni Asistent za SEPA Plaćanja
 
-End-to-end RAG chatbot za Centralnu banku Crne Gore, sa fokusom na SEPA plaćanja i javna saopštenja CBCG.
+Inteligentni chatbot asistent Centralne banke Crne Gore za pitanja o SEPA plaćanjima i službenim saopštenjima.
 
-## 🎯 Features
+## 🚀 Karakteristike
 
-- **Hybrid Search**: Kombinacija keyword + semantic search za brze i pametne odgovore
-- **Vector Database**: FAISS + OpenAI embeddings za semantic understanding
-- **Auto-Scraping**: Automatski skrejpovanje cbcg.me za nove vesti i saopštenja
-- **Smart Source Extraction**: Prikazuje relevantne izvore samo kada su potrebni
-- **1740+ Documents**: Saopštenja, vesti, blog, intervjui, FAQ, SEPA dokumentacija
+- **Multilingual AI model** - Optimizovan za srpski/crnogorski jezik
+- **Automatsko ažuriranje** - Dnevno skrejpuje nove članke sa cbcg.me
+- **Hibridna pretraga** - Kombinuje keyword i semantic search za najbolje rezultate
+- **Kontekstualni razgovori** - Pamti prethodna pitanja u konverzaciji
+- **Temporalna svjesnost** - Prioritizuje novije informacije
 
-## 🚀 Quick Start
+## 📋 Tehnologije
 
-### 1. Install Dependencies
+- **Backend**: FastAPI (Python 3.10+)
+- **LLM**: OpenAI GPT-4o & GPT-4o-mini
+- **Vector DB**: FAISS + multilingual-e5-large embeddings (1024-dim)
+- **Scraper**: httpx + selectolax
+- **Frontend**: HTML + Vanilla JavaScript
 
+## 🔧 Brza Instalacija
+
+### 1. Kloniraj repo
 ```bash
-python -m venv .venv
-.venv\Scripts\activate  # Windows
+git clone https://github.com/radulovicigor/CBCGchatbot.git
+cd CBCGchatbot
+```
+
+### 2. Instaliraj dependencies
+```bash
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment
-
+### 3. Konfiguriši OpenAI API
 ```bash
+# Kopiraj template i dodaj svoj API key
 copy env_template.txt .env
-# Edit .env i dodaj svoj OPENAI_API_KEY
+
+# Edituj .env i dodaj:
+# OPENAI_API_KEY=sk-your-key-here
 ```
 
-### 3. Parse PDF & Build Vector Index
-
+### 4. Inicijalizuj bazu (prvi put)
 ```bash
-python parse_and_store.py
+# Scrape-uj članke sa cbcg.me
+python apps/functions/local_scraper.py
+
+# Build vektorsku bazu
 python build_vector_index.py
 ```
 
-### 4. Start API
-
-```bash
-python run_api.bat
-```
-
-### 5. Test
-
-Otvorite `simple_chat.html` u browseru ili koristite API:
-
-```bash
-curl -X POST http://localhost:8000/ask \
-  -H "Content-Type: application/json" \
-  -d '{"question":"Kako da posaljem novac u Njemacku?","lang":"cg"}'
-```
-
-## 📊 Current Status
-
-- ✅ **1740 documents** indexed (news, PDF, blog, FAQ)
-- ✅ **Hybrid search** (keyword + vector)
-- ✅ **Auto-scraping** cbcg.me (daily)
-- ✅ **Smart source** extraction
-- ✅ **Vector DB** with caching
-- ✅ **Local development** ready
-
-## 🏗️ Architecture
-
-```
-CBCG_Chatbot/
-├── apps/
-│   ├── api/                 # FastAPI RAG servis
-│   │   ├── main.py         # API endpoints
-│   │   ├── rag_pipeline.py # RAG logic
-│   │   ├── prompts.py      # System prompts
-│   │   └── retrieval_mock.py # Hybrid search
-│   ├── functions/           # Scraper functions
-│   │   └── local_scraper.py # cbcg.me scraper
-│   └── ingest/              # Data storage
-│       ├── local_storage.py # Keyword search
-│       └── local_storage_vector.py # Vector search
-├── data/
-│   ├── parsed_data.json     # 1740 documents
-│   ├── vector_index.faiss  # FAISS index (10MB)
-│   └── docs_metadata.pkl    # Metadata
-├── simple_chat.html         # Chat UI
-├── run_api.bat             # Start API
-├── run_scraper.bat         # Run scraper
-└── check_scraper_status.py # Database status
-```
-
-## 🔧 Usage
-
-### Start API Server
-
+### 5. Pokreni API server
 ```bash
 # Windows
 run_api.bat
 
-# Manually
+# Linux/Mac
 uvicorn apps.api.main:app --reload --port 8000
 ```
 
-API dostupan na: `http://localhost:8000`
-
-### Run Scraper
-
-```bash
-# Manually
-python apps\functions\local_scraper.py
-
-# With batch file
-run_scraper.bat
+### 6. Otvori chat
+Otvori `simple_chat.html` u browseru ili poseti:
+```
+http://localhost:8000/widget.html
 ```
 
-### Check Database Status
+## 📁 Struktura Projekta
 
-```bash
-python check_scraper_status.py
+```
+CBCG_Chatbot/
+├── apps/
+│   ├── api/              # FastAPI backend
+│   │   ├── main.py       # API endpoints
+│   │   ├── rag_pipeline.py  # RAG logic
+│   │   └── prompts.py    # System prompts
+│   ├── functions/        # Scraper
+│   │   └── local_scraper.py
+│   └── ingest/           # Data processing
+│       ├── local_storage_vector_multilingual.py  # Vector DB
+│       └── local_storage.py  # JSON storage
+├── data/                 # Database (gitignored)
+│   ├── parsed_data.json  # Scraped articles
+│   └── vector_index_multilingual.faiss  # Vector index
+├── simple_chat.html      # Chat UI
+├── schedule_scraper.py   # Daily scraper
+└── requirements.txt
 ```
 
-### Rebuild Vector Index
+## 🔄 Automatsko Ažuriranje
 
+### Jednom (ručno)
 ```bash
+python apps/functions/local_scraper.py
 python build_vector_index.py
 ```
 
-## 📁 Document Sources
-
-- **SEPA Q&A** (PDF) - 34 dokumenta
-- **Saopštenja** (cbcg.me) - 1249 vesti
-- **Događaji** (cbcg.me) - 137 vesti
-- **Intervjui** (cbcg.me) - 81 vest
-- **Blog** (cbcg.me) - 16 članaka
-- **FAQ** (cbcg.me) - 16 pitanja
-- **O nama** (cbcg.me) - 185 stranica
-
-**Total: 1740 dokumenta**
-
-## 🔍 Search Strategy
-
-### Hybrid Approach
-
-1. **Keyword Search** (90% slučajeva - instant)
-   - Brz keyword matching
-   - Uzima prvi izvor sa validnim URL-om
-
-2. **Vector Search** (10% slučajeva - 1s)
-   - Semantic understanding
-   - Za kompleksne upite
-
-### Caching
-
-- Embeddings se keširaju (`data/embedding_cache.pkl`)
-- Isti query → instant odgovor (0.04s)
-
-## 🚀 Next Steps: Azure Deployment
-
-### 1. Azure Resources
-
-- **App Service** - FastAPI hosting
-- **Azure AI Search** - Managed vector database
-- **Blob Storage** - Document storage
-- **Functions** - Scheduled scraper
-
-### 2. Migration
-
+### Svaki dan (automatski)
 ```bash
-# Move from local_storage_vector.py to Azure AI Search
-# Update retrieval_mock.py to use Azure Search
-# Deploy to Azure App Service
+python schedule_scraper.py
 ```
 
-## 📚 API Endpoints
+Scraper se pokreće svaki dan u 2 AM i:
+1. Skrejpuje nove članke sa cbcg.me
+2. Dodaje ih u `parsed_data.json`
+3. Automatski rebuild-uje vector index
 
-- `GET /health` - Health check
-- `POST /ask` - Ask question
-  ```json
-  {
-    "question": "Kako da posaljem novac?",
-    "lang": "cg"
-  }
-  ```
-- `GET /docs` - API documentation
+## 🌐 API Endpoints
 
-## 🔧 Configuration
-
-### Environment Variables (.env)
-
-```env
-OPENAI_API_KEY=sk-...
-OPENAI_MODEL_RESPONSES=gpt-4o
-ANSWER_TEMPERATURE=0.1
-MAX_CHUNKS=12
+### POST `/ask`
+Pošalji pitanje chatbot-u
+```json
+{
+  "question": "Šta je SEPA?",
+  "conversation_history": []  // Opciono
+}
 ```
 
-## 📝 Development
+Odgovor:
+```json
+{
+  "answer": "SEPA je platažna zona od 41 zemlje...",
+  "sources": [
+    {
+      "title": "SEPA Q&A",
+      "url": "https://cbcg.me/...",
+      "published_at": "2025-10-27T15:55:49"
+    }
+  ],
+  "answer_id": "chatcmpl-xxx"
+}
+```
 
-### Local Development
+### GET `/health`
+Provera statusa servera
+
+## 🎨 Frontend Integracija
+
+### Samostalni Chat
+```html
+<iframe src="http://localhost:8000/widget.html" 
+        width="400" height="600" frameborder="0">
+</iframe>
+```
+
+### Custom implementacija
+```javascript
+fetch('http://localhost:8000/ask', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    question: 'Kako da pošaljem pare u Holandiju?'
+  })
+})
+.then(res => res.json())
+.then(data => console.log(data.answer));
+```
+
+## 🔑 Environment Variables
 
 ```bash
-# Start API
-uvicorn apps.api.main:app --reload --port 8000
+# OpenAI
+OPENAI_API_KEY=sk-xxx              # Obavezno
+OPENAI_MODEL_RESPONSES=gpt-4o      # Default: gpt-4o
+ANSWER_TEMPERATURE=0.1             # Default: 0.1
 
-# Run scraper
-python apps\functions\local_scraper.py
+# Server
+MAX_CHUNKS=12                      # Max retrieved documents
+PORT=8000                          # Server port
+```
 
-# Check status
-python check_scraper_status.py
+## 📊 Baza Podataka
 
-# Rebuild indexes
+### Trenutno stanje
+```bash
+# Provjeri status baze
+python -c "
+import json
+with open('data/parsed_data.json', 'r', encoding='utf-8') as f:
+    docs = json.load(f)
+print(f'Total articles: {len(docs)}')
+print(f'News: {len([d for d in docs if d.get(\"type\") == \"news\"])}')
+print(f'PDF: {len([d for d in docs if d.get(\"type\") == \"pdf\"])}')
+"
+```
+
+### Re-build vector index
+```bash
+# Nakon novih članaka
 python build_vector_index.py
 ```
 
-## 📊 Performance
+## 🐛 Troubleshooting
 
-- **Keyword Search**: 10-20ms
-- **Vector Search**: 1s (first call), 40ms (cached)
-- **Hybrid**: 99% keyword (fast), 1% vector (smart)
-- **Total Response Time**: 2-3s (includes LLM)
+### Problem: "ModuleNotFoundError"
+```bash
+pip install -r requirements.txt
+```
 
-## 📖 More Info
+### Problem: "OPENAI_API_KEY not found"
+```bash
+# Provjeri .env fajl
+echo %OPENAI_API_KEY%  # Windows
+echo $OPENAI_API_KEY   # Linux/Mac
+```
 
-- `VECTOR_DATABASE_INFO.md` - Vector DB details
-- `simple_chat.html` - Chat UI
-- `check_scraper_status.py` - Database status script
+### Problem: "No articles scraped"
+```bash
+# Provjeri internet konekciju i SSL
+python apps/functions/local_scraper.py
+```
 
-## 📄 License
+### Problem: "Slow response times"
+- Prvo pitanje je sporije (učitavanje multilingual modela ~5-10s)
+- Kasnije pitanje su brže (~1-2s)
 
-MIT
+## 🚀 Azure Deployment
+
+Za deployment na Azure AI Foundry, pogledaj:
+- `AZURE_DEPLOYMENT_CHECKLIST.md` - Detaljne instrukcije
+- Estimirani troškovi: **$30-45/mjesec**
+- Vrijeme: **6-8 sati**
+
+## 📝 Licence
+
+MIT License - slobodno koristiti za komercijalne svrhe.
+
+## 🤝 Podrška
+
+Za pitanja i podršku:
+- Email: info@cbcg.me
+- Web: https://www.cbcg.me
+
+---
+
+**Developed with ❤️ for Centralna Banka Crne Gore**

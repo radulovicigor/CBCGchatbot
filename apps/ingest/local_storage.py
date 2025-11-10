@@ -5,6 +5,7 @@ import json
 import hashlib
 from pathlib import Path
 from typing import List, Dict
+from datetime import datetime, timedelta
 
 
 STORAGE_FILE = Path("data/parsed_data.json")
@@ -71,6 +72,25 @@ def search_documents(query: str, k: int = 8) -> List[Dict]:
         # Bonus za news dokumente - prioritizuj ih
         if doc.get("type") == "news":
             score += 2
+        
+        # PRIORITIZACIJA PO DATUMU: Noviji članci = VIŠE bodova (POVEĆAN BONUS)
+        published_at = doc.get("published_at")
+        if published_at:
+            try:
+                pub_date = datetime.fromisoformat(published_at.replace('Z', '+00:00'))
+                now = datetime.now(pub_date.tzinfo) if pub_date.tzinfo else datetime.now()
+                days_old = (now - pub_date).days
+                
+                # POVEĆAN BONUS za novije članke (0-30 dana = +10, 30-90 = +7, 90-365 = +3, stariji = 0)
+                if days_old <= 30:
+                    score += 10  # Najnoviji - POVEĆAN BONUS
+                elif days_old <= 90:
+                    score += 7  # Skoriji - POVEĆAN BONUS
+                elif days_old <= 365:
+                    score += 3  # Prošle godine - POVEĆAN BONUS
+                # Stariji od godinu dana = 0 bonus (ali ne penalizujemo)
+            except:
+                pass  # Ako ne može da parsira datum, ignoriraj
         
         scored_docs.append((score, doc))
     

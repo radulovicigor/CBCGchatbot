@@ -183,6 +183,20 @@ def scrape_cbcg():
                             if len(body) > 8000:
                                 body = body[:8000]
                         
+                        # Extract publication date from HTML
+                        published_at = datetime.now().isoformat()  # Fallback to now
+                        try:
+                            # Try to find date in format DD/MM/YYYY
+                            date_match = re.search(r"class=['\"]date['\"][^>]*>(\d{1,2}/\d{1,2}/\d{4})<", html_content)
+                            if date_match:
+                                date_str = date_match.group(1)  # e.g., "06/11/2025"
+                                # Parse DD/MM/YYYY to ISO format
+                                date_obj = datetime.strptime(date_str, "%d/%m/%Y")
+                                published_at = date_obj.isoformat()
+                        except Exception as e:
+                            # If date parsing fails, use current time
+                            pass
+                        
                         # Save if sufficient content
                         if len(body) > 150:
                             doc_id = f"cbcg_{hash_content(link)}"
@@ -192,7 +206,7 @@ def scrape_cbcg():
                                 "content": body[:3000],
                                 "source": "cbcg.me",
                                 "url": link,
-                                "published_at": datetime.now().isoformat(),
+                                "published_at": published_at,
                                 "page": None,
                                 "type": "news"
                             }

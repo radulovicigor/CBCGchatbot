@@ -6,6 +6,7 @@ import os
 import pickle
 from pathlib import Path
 from typing import List, Dict
+from datetime import datetime
 import faiss
 import numpy as np
 from openai import OpenAI
@@ -192,8 +193,8 @@ def search_documents(query: str, k: int = 8) -> List[Dict]:
     # Search
     distances, indices = index.search(query_embedding, min(k * 2, len(docs)))
     
-    # Get results
-    results = []
+    # Get results sa scoring po datumu
+    scored_results = []
     seen_urls = set()
     
     for idx, distance in zip(indices[0], distances[0]):
@@ -208,9 +209,36 @@ def search_documents(query: str, k: int = 8) -> List[Dict]:
             continue
         seen_urls.add(url)
         
-        results.append(doc)
-        if len(results) >= k:
+        # Score po datumu (noviji = veći score)
+        date_score = 0
+        published_at = doc.get("published_at")
+        if published_at:
+            try:
+                pub_date = datetime.fromisoformat(published_at.replace('Z', '+00:00'))
+                now = datetime.now(pub_date.tzinfo) if pub_date.tzinfo else datetime.now()
+                days_old = (now - pub_date).days
+                
+                # POVEĆAN BONUS za novije članke (0-30 dana = +10, 30-90 = +7, 90-365 = +3, stariji = 0)
+                if days_old <= 30:
+                    date_score = 10  # Najnoviji - POVEĆAN BONUS
+                elif days_old <= 90:
+                    date_score = 7  # Skoriji - POVEĆAN BONUS
+                elif days_old <= 365:
+                    date_score = 3  # Prošle godine - POVEĆAN BONUS
+            except:
+                pass
+        
+        # Kombinuj distance (veći = bolji) sa date_score
+        # distance je cosine similarity (0-1), veći = bolji
+        combined_score = float(distance) + (date_score * 0.2)  # POVEĆAN Date bonus (0.2 umesto 0.1)
+        
+        scored_results.append((combined_score, doc))
+        if len(scored_results) >= k * 2:  # Uzmi više pa sortiraj
             break
+    
+    # Sortiraj po combined score i vrati top k
+    scored_results.sort(key=lambda x: x[0], reverse=True)
+    results = [doc for _, doc in scored_results[:k]]
     
     return results
 

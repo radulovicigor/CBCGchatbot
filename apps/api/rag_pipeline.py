@@ -3,9 +3,10 @@ RAG pipeline: retrieval + synthesis (OpenAI Chat Completions).
 """
 import os
 import uuid
-from typing import List, Dict
+from typing import List, Dict, Optional
+from datetime import datetime
 from openai import OpenAI
-from .prompts import SYSTEM_PROMPT
+from .prompts import get_system_prompt
 from dotenv import load_dotenv
 
 # Load .env file
@@ -17,13 +18,18 @@ client = OpenAI(
 )
 
 
-def synthesize_answer(query: str, ctx_docs: List[Dict]) -> tuple[str, str]:
+def synthesize_answer(
+    query: str, 
+    ctx_docs: List[Dict],
+    conversation_history: Optional[List[Dict[str, str]]] = None
+) -> tuple[str, str]:
     """
     Sinteza odgovora koristeći kontekst + OpenAI Chat Completions.
     
     Args:
         query: Korisničko pitanje
         ctx_docs: Lista relevantnih dokumenata
+        conversation_history: Prethodne poruke u konverzaciji (opciono)
         
     Returns:
         (answer, answer_id)
@@ -33,18 +39,46 @@ def synthesize_answer(query: str, ctx_docs: List[Dict]) -> tuple[str, str]:
     for i, d in enumerate(ctx_docs, start=1):
         # Ne dodaj numerisane reference - samo content
         body = d["content"][:2000]  # Skrati na 2000 char
+        # Dodaj datum ako postoji
+        if d.get("published_at"):
+            try:
+                pub_date = datetime.fromisoformat(d.get("published_at", "").replace('Z', '+00:00'))
+                date_str = pub_date.strftime("%Y-%m-%d")
+                body = f"[Datum: {date_str}] {body}"
+            except:
+                pass
         context_blocks.append(body)
     
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": f"Pitanje: {query}\n\nKoristi ove informacije da odgovoriš:\n" + "\n\n---\n\n".join(context_blocks)}
-    ]
+    # Proveri da li kontekst sadrži relevantne informacije
+    if not context_blocks or len(context_blocks) == 0:
+        return "Nemam informacije o tome.", "no-context"
+    
+    # Kreiraj system prompt sa trenutnim datumom
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    system_prompt = get_system_prompt(current_date)
+    
+    # Kreiraj messages sa kontekstom konverzacije
+    messages = [{"role": "system", "content": system_prompt}]
+    
+    # Dodaj prethodne poruke ako postoje
+    if conversation_history:
+        for msg in conversation_history[-6:]:  # Zadnje 6 poruka (3 pitanja + 3 odgovora)
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            if role in ["user", "assistant"] and content:
+                messages.append({"role": role, "content": content})
+    
+    # Dodaj trenutno pitanje i kontekst
+    context_text = "\n\n---\n\n".join(context_blocks)
+    user_content = f"Pitanje: {query}\n\nKoristi OVNE informacije da odgovoriš. Ako ove informacije NE ODGOVARAJU na pitanje - kaži 'Nemam informacije o tome.':\n{context_text}"
+    messages.append({"role": "user", "content": user_content})
     
     # Chat Completions API – standardni poziv
+    # Koristi gpt-4o za najbolje odgovore (synthesis zahteva najbolji model)
     resp = client.chat.completions.create(
-        model=os.getenv("OPENAI_MODEL_RESPONSES", "gpt-4o"),
+        model="gpt-4o",
         messages=messages,
-        temperature=float(os.getenv("ANSWER_TEMPERATURE", "0.1")),
+        temperature=0.1,  # Niska temperatura za konzistentne odgovore
         max_tokens=800
     )
     
@@ -69,12 +103,24 @@ def synthesize_answer(query: str, ctx_docs: List[Dict]) -> tuple[str, str]:
     text = re.sub(r'^\d+\.\s+', '', text, flags=re.MULTILINE)  # Remove 1. 2. 3. lists
     text = re.sub(r'^-\s+', '- ', text, flags=re.MULTILINE)  # Keep dashes natural
     
-    # Remove common ending phrases
+    # Remove common ending phrases - STROGO UKLONJENO
     unwanted_endings = [
         r'Ako imate još.*',
+        r'Ako imate dodatna pitanja.*',
+        r'Ako imate.*pitanja.*',
+        r'slobodno.*pitajte.*',
+        r'slobodno ih postavite.*',
         r'Nadam se da.*',
         r'Hvala na razumevanju.*',
         r'Obratite se.*',
+        r'kontaktirate.*',
+        r'preporučujem.*',
+        r'posjetite.*',
+        r'Preporučujem da posjetite.*',
+        r'Preporučujem da kontaktirate.*',
+        r'Ako vam treba.*',
+        r'Za.*informacije.*kontaktirate.*',
+        r'Za.*informacije.*posjetite.*',
         r'Srdačno.*',
         r'Uživajte.*',
         r'Veselim se.*',
@@ -90,7 +136,7 @@ def synthesize_answer(query: str, ctx_docs: List[Dict]) -> tuple[str, str]:
     ]
     
     for pattern in unwanted_endings:
-        text = re.sub(pattern, '', text, flags=re.IGNORECASE | re.MULTILINE)
+        text = re.sub(pattern, '', text, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL)
     
     # Remove multiple newlines
     text = re.sub(r'\n{3,}', '\n\n', text)
@@ -119,6 +165,55 @@ def synthesize_answer(query: str, ctx_docs: List[Dict]) -> tuple[str, str]:
     
     # Trim whitespace
     text = text.strip()
+    
+    # STROGA PROVERA: Ako je odgovor generičan ili ne odgovara na pitanje
+    query_lower = query.lower()
+    answer_lower = text.lower()
+    
+    # Ako odgovor sadrži generičke fraze koje ne daju konkretan odgovor
+    generic_phrases = [
+        'kontaktirate', 'preporučujem', 'obratite se', 'posjetite', 
+        'zvaničnu web stranicu', 'za precizne informacije',
+        'nisu dostupne', 'nisu navedene', 'nije navedena', 'nije dostupna',
+        'dostavljenim dokumentima', 'dostupnim informacijama',
+        'ako imate dodatna pitanja', 'slobodno pitajte',
+        'međutim.*nisu dostupne', 'ali.*nije navedena',
+        'za.*informacije.*kontaktirate', 'za.*informacije.*posjetite'
+    ]
+    
+    # Ako pitanje traži specifične informacije (ulica, adresa, tačan podatak, prve pare)
+    specific_question_keywords = ['ulici', 'ulica', 'adresi', 'adresa', 'adresu', 'tačno', 'tačan', 'tačna', 'prve pare', 'prvi']
+    
+    # PROVERA 1: Specifična pitanja + generički odgovori = NEMAM INFORMACIJE
+    if any(word in query_lower for word in specific_question_keywords):
+        # Proveri da li odgovor sadrži generičke fraze (koristi regex za pattern-e)
+        has_generic = False
+        for phrase in generic_phrases:
+            if re.search(phrase, answer_lower, re.IGNORECASE):
+                has_generic = True
+                break
+        if has_generic:
+            return "Nemam informacije o tome.", "no-info"
+    
+    # PROVERA 2: Ako odgovor govori o nečem što nije u pitanju
+    # Npr. pitanje o "prvim parama" a odgovor o "Prvoj banci" - NE ODGOVARA
+    if 'prve pare' in query_lower or 'prvi pare' in query_lower:
+        # Ako odgovor ne spominje valutu/novac već samo banku
+        if 'prva banka' in answer_lower and ('valuta' not in answer_lower and 'pare' not in answer_lower):
+            return "Nemam informacije o tome.", "no-info"
+    
+    # PROVERA 3: Ako odgovor je previše kratak i generičan
+    if len(text) < 50:
+        # Ako je odgovor kratak i sadrži generičke fraze
+        short_generic = ['za više informacija', 'dostupnim', 'nisu dostupne', 'nisu navedene', 'preporučujem']
+        if any(phrase in answer_lower for phrase in short_generic):
+            return "Nemam informacije o tome.", "no-info"
+    
+    # PROVERA 4: Ako odgovor je prekinut - samo ako je VEOMA kratak (verovatno greška)
+    # Ne prekidaj ako je normalna rečenica koja se nastavlja
+    if text.endswith(',') and len(text) < 30:
+        # Odgovor je prekinut i kratak - verovatno greška
+        return "Nemam informacije o tome.", "no-info"
     
     return text, answer_id
 

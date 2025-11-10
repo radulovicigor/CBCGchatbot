@@ -21,11 +21,11 @@ env/
 .env.local
 *.log
 
-# Data files
+# Data files (baza podataka - ne commit-ujemo)
 data/parsed_data.json
-data/vector_index.faiss
-data/docs_metadata.pkl
-data/embedding_cache.pkl
+data/*.faiss
+data/*.pkl
+data/*.pdf
 
 # IDE
 .vscode/

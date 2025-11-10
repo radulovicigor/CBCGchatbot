@@ -205,6 +205,9 @@
         const sendBtn = document.getElementById('sendBtn');
         const status = document.getElementById('status');
         
+        // Čuvaj kontekst konverzacije
+        let conversationHistory = [];
+        
         function addMessage(text, isUser, sources = []) {
             const msgDiv = document.createElement('div');
             msgDiv.className = 'message ' + (isUser ? 'user-msg' : 'bot-msg');
@@ -218,7 +221,17 @@
                 const sourcesDiv = document.createElement('div');
                 sourcesDiv.className = 'sources';
                 sourcesDiv.innerHTML = '<strong>Izvori:</strong><br>' + 
-                    sources.map(s => s.url ? `<a href="${s.url}" target="_blank">${s.title}</a>` : s.title).join('<br>');
+                    sources.map(s => {
+                        let link = s.url ? `<a href="${s.url}" target="_blank">${s.title}</a>` : s.title;
+                        if (s.published_at) {
+                            try {
+                                const date = new Date(s.published_at);
+                                const dateStr = date.toLocaleDateString('sr-RS', { year: 'numeric', month: 'short', day: 'numeric' });
+                                link += ` <span style="opacity: 0.7; font-size: 11px;">(${dateStr})</span>`;
+                            } catch (e) {}
+                        }
+                        return link;
+                    }).join('<br>');
                 msgDiv.appendChild(sourcesDiv);
             }
             
@@ -233,6 +246,9 @@
             addMessage(question, true);
             input.value = '';
             
+            // Dodaj pitanje u kontekst
+            conversationHistory.push({ role: 'user', content: question });
+            
             input.disabled = true;
             sendBtn.disabled = true;
             sendBtn.innerHTML = '<div class="loading"></div>';
@@ -242,13 +258,19 @@
                 const response = await fetch(`${API_BASE}/ask`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({question: question, lang: 'me'})
+                    body: JSON.stringify({
+                        question: question, 
+                        lang: 'me',
+                        conversation_history: conversationHistory.slice(-6) // Zadnje 6 poruka (3 pitanja + 3 odgovora)
+                    })
                 });
                 
                 const data = await response.json();
                 
                 if (data.answer) {
                     addMessage(data.answer, false, data.sources || []);
+                    // Dodaj odgovor u kontekst
+                    conversationHistory.push({ role: 'assistant', content: data.answer });
                     status.textContent = 'Spremno za sledeće pitanje';
                 } else {
                     addMessage('Greška: Nema odgovora', false);
