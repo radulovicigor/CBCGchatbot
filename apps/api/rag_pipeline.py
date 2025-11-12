@@ -70,7 +70,18 @@ def synthesize_answer(
     
     # Dodaj trenutno pitanje i kontekst
     context_text = "\n\n---\n\n".join(context_blocks)
-    user_content = f"Pitanje: {query}\n\nKoristi OVNE informacije da odgovoriš. Ako ove informacije NE ODGOVARAJU na pitanje - kaži 'Nemam informacije o tome.':\n{context_text}"
+    user_content = f"""Pitanje: {query}
+
+Kontekst sa relevantnim informacijama:
+{context_text}
+
+TVOJ ZADATAK:
+- Pažljivo pročitaj kontekst
+- Izvuci sve informacije relevantne za pitanje
+- Sintetiši ih u prirodan, koncizan odgovor
+- Ako kontekst ima informacije - ODGOVORI, ne traži savršen match
+- Ako kontekst je potpuno prazan ili nerelevanten - kaži "Nemam informacije o tome."
+"""
     messages.append({"role": "user", "content": user_content})
     
     # Chat Completions API – standardni poziv
@@ -78,7 +89,7 @@ def synthesize_answer(
     resp = client.chat.completions.create(
         model="gpt-4o",
         messages=messages,
-        temperature=0.1,  # Niska temperatura za konzistentne odgovore
+        temperature=0.3,  # Balans izmedu preciznosti i kreativnosti za bolje reasoning
         max_tokens=800
     )
     
