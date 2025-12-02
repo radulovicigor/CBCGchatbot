@@ -3,6 +3,7 @@ FastAPI RAG API za CBCG SEPA chatbot.
 """
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from .schemas import AskRequest, AskResponse, Source
 from .rag_pipeline import synthesize_answer
 import os
@@ -559,6 +560,13 @@ def is_relevant_question(question: str) -> bool:
     
     # SVE OSTALO PROLAZI - neka GPT-4o sam odluči šta da radi sa tim
     return True
+
+
+@app.get("/simple_chat.html")
+def get_chat_page():
+    """Servira frontend chat stranicu."""
+    html_path = os.path.join(os.path.dirname(__file__), "..", "..", "simple_chat.html")
+    return FileResponse(html_path)
 
 
 @app.post("/ask", response_model=AskResponse)
