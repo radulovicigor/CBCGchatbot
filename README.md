@@ -4,7 +4,7 @@ Inteligentni chatbot asistent Centralne banke Crne Gore za pitanja o SEPA plaća
 
 ## 🚀 Karakteristike
 
-- **Multilingual AI model** - Optimizovan za srpski/crnogorski jezik
+- **Multilingual AI model** - Optimizovan za crnogorski jezik
 - **Automatsko ažuriranje** - Dnevno skrejpuje nove članke sa cbcg.me
 - **Hibridna pretraga** - Kombinuje keyword i semantic search za najbolje rezultate
 - **Kontekstualni razgovori** - Pamti prethodna pitanja u konverzaciji
