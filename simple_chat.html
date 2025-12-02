@@ -199,7 +199,8 @@
     </div>
     
     <script>
-        const API_BASE = 'http://localhost:8000';
+        // Automatski detektuj API URL - koristi trenutni domen
+        const API_BASE = window.location.origin;
         const chat = document.getElementById('chat');
         const input = document.getElementById('input');
         const sendBtn = document.getElementById('sendBtn');
