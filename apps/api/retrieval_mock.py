@@ -25,14 +25,19 @@ def retrieve(query: str, k: int = 8) -> List[Dict]:
     Returns:
         Lista konteksta (content, title, source, page)
     """
-    # Provjeri da li postoje lokalni dokumenti
-    docs = load_documents()
-    
-    if not docs:
-        # Fallback na sample dokumente ako nema parsiranog PDF-a
-        print("WARNING: No parsed PDF data found. Using sample documents.")
-        print("Run: python parse_and_store.py")
+    try:
+        # Provjeri da li postoje lokalni dokumenti
+        docs = load_documents()
         
+        if not docs:
+            # Fallback na sample dokumente ako nema parsiranog PDF-a
+            print("WARNING: No parsed PDF data found. Using sample documents.")
+            print("Run: python parse_and_store.py")
+            
+            return _get_sample_docs()[:k]
+    except Exception as e:
+        print(f"Error loading documents: {e}")
+        # Fallback na sample dokumente ako učitavanje ne uspe
         return _get_sample_docs()[:k]
     
     # Proveri da li je pitanje o "trenutno/sad" - ako jeste, filtriraj SAMO najnovije članke
