@@ -565,7 +565,18 @@ def is_relevant_question(question: str) -> bool:
 @app.get("/simple_chat.html")
 def get_chat_page():
     """Servira frontend chat stranicu."""
-    html_path = os.path.join(os.path.dirname(__file__), "..", "..", "simple_chat.html")
+    # Putanja do simple_chat.html u root direktorijumu projekta
+    # apps/api/main.py -> apps/ -> root/
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    html_path = os.path.join(base_dir, "simple_chat.html")
+    
+    # Fallback opcije
+    if not os.path.exists(html_path):
+        html_path = os.path.join(os.path.dirname(__file__), "..", "..", "simple_chat.html")
+    if not os.path.exists(html_path):
+        # Apsolutna putanja iz root-a projekta
+        html_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "simple_chat.html"))
+    
     return FileResponse(html_path)
 
 
@@ -627,6 +638,12 @@ def ask(payload: AskRequest):
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/")
+def root():
+    """Root endpoint - redirect to health check."""
+    return {"status": "ok", "message": "CBCG Chatbot API is running", "endpoints": ["/health", "/ask", "/simple_chat.html"]}
 
 
 @app.get("/health")
