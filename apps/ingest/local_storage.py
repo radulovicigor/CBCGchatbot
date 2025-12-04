@@ -8,7 +8,9 @@ from typing import List, Dict
 from datetime import datetime, timedelta
 
 
-STORAGE_FILE = Path("data/parsed_data.json")
+# Koristi apsolutne putanje relativne na lokaciju projekta
+PROJECT_ROOT = Path(__file__).parent.parent.parent.absolute()
+STORAGE_FILE = PROJECT_ROOT / "data" / "parsed_data.json"
 
 
 def save_documents(docs: List[Dict]):

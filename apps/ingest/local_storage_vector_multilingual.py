@@ -11,8 +11,9 @@ from typing import List, Dict
 from sentence_transformers import SentenceTransformer
 from datetime import datetime
 
-# Paths
-DATA_DIR = Path("data")
+# Paths - koristi apsolutne putanje relativne na lokaciju projekta
+PROJECT_ROOT = Path(__file__).parent.parent.parent.absolute()
+DATA_DIR = PROJECT_ROOT / "data"
 STORAGE_FILE = DATA_DIR / "parsed_data.json"
 VECTOR_INDEX_FILE = DATA_DIR / "vector_index_multilingual.faiss"
 DOCS_METADATA_FILE = DATA_DIR / "docs_metadata_multilingual.pkl"

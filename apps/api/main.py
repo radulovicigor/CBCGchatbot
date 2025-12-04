@@ -566,16 +566,28 @@ def is_relevant_question(question: str) -> bool:
 def get_chat_page():
     """Servira frontend chat stranicu."""
     # Putanja do simple_chat.html u root direktorijumu projekta
-    # apps/api/main.py -> apps/ -> root/
+    # apps/api/main.py -> apps/api/ -> apps/ -> root/
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     html_path = os.path.join(base_dir, "simple_chat.html")
     
-    # Fallback opcije
+    print(f"Looking for simple_chat.html at: {html_path}")
+    print(f"File exists: {os.path.exists(html_path)}")
+    
     if not os.path.exists(html_path):
-        html_path = os.path.join(os.path.dirname(__file__), "..", "..", "simple_chat.html")
+        # Probaj alternativne putanje
+        alt_paths = [
+            os.path.join(os.getcwd(), "simple_chat.html"),
+            "/opt/render/project/src/simple_chat.html",
+            os.path.abspath("simple_chat.html")
+        ]
+        for alt_path in alt_paths:
+            print(f"Trying alternative path: {alt_path}")
+            if os.path.exists(alt_path):
+                html_path = alt_path
+                break
+    
     if not os.path.exists(html_path):
-        # Apsolutna putanja iz root-a projekta
-        html_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "simple_chat.html"))
+        raise HTTPException(status_code=404, detail=f"simple_chat.html not found. Tried: {html_path}")
     
     return FileResponse(html_path)
 
@@ -650,12 +662,24 @@ def root():
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     html_path = os.path.join(base_dir, "simple_chat.html")
     
-    # Fallback opcije
+    print(f"Root endpoint - Looking for simple_chat.html at: {html_path}")
+    print(f"File exists: {os.path.exists(html_path)}")
+    
     if not os.path.exists(html_path):
-        html_path = os.path.join(os.path.dirname(__file__), "..", "..", "simple_chat.html")
+        # Probaj alternativne putanje
+        alt_paths = [
+            os.path.join(os.getcwd(), "simple_chat.html"),
+            "/opt/render/project/src/simple_chat.html",
+            os.path.abspath("simple_chat.html")
+        ]
+        for alt_path in alt_paths:
+            print(f"Trying alternative path: {alt_path}")
+            if os.path.exists(alt_path):
+                html_path = alt_path
+                break
+    
     if not os.path.exists(html_path):
-        # Apsolutna putanja iz root-a projekta
-        html_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "simple_chat.html"))
+        raise HTTPException(status_code=404, detail=f"simple_chat.html not found. Tried: {html_path}")
     
     return FileResponse(html_path)
 
